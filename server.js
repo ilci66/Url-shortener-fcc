@@ -5,6 +5,7 @@ const bodyParser = require('body-parser')
 const cors = require('cors');
 const app = express();
 //.env doesn't work very well on replit tried many times
+//change password later
 const uri = 'mongodb+srv://ilker:123asd123@learningmongodb.duuyu.mongodb.net/database2?retryWrites=true&w=majority';
 //useFindAndModify: false  for an error I kept getting on console
 mongoose.connect(uri, {useFindAndModify: false, useNewUrlParser: true, useUnifiedTopology: true})
@@ -42,10 +43,13 @@ app.post("/api/shorturl", bodyParser.urlencoded({ extended: false }),(req, res) 
   let urlNum = 1;
 //copied this regex from stack overflow
 //seems to me that it's working but doesn'T pass tests
-  let regexUrl = new RegExp(/[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi)
+//this one even accepts .cm and stuff doesn't work well
+  //let regexUrl = new RegExp(/[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi)
+
+//use this one (also copied, need to uppen my regex game)
+  let regexUrl = new RegExp(/((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/)
 
   if(!inputUrl.match(regexUrl)){
-    let errText = { error: 'invalid url' } 
     res.json({ error: 'invalid url' })
 //with this return here the execution of the rest is stoppped
     return;
@@ -100,3 +104,18 @@ Url.findOne({}).sort({short:-1}).exec((error, data) => {
 });
 
 //now to handle redirect
+//easier than expected
+app.get('/api/shorturl/:input', (req, res) => {
+  let input = req.params.input;
+  //console.log(req.params.input);
+  Url.findOne({short:input}, (error, data) => {
+    if(!error && data != undefined){
+      //console.log('here')
+      //I think i can alsı do it with a code
+      res.redirect(302,data.url)
+      //yep
+    }else{
+      res.json("Url not found")
+    }
+  })
+})
